@@ -1,0 +1,105 @@
+An expression consists of:
+Numbers
+Symbols (+ and SOS are both symbols)
+
+Lambdas          |
+Conditionals     | later
+Definitions      |
+
+Combinations
+
+Evalulate (expression)
+	Evaluate character to get procedures
+	Evaluate operands to get arguements
+	Apply:
+	Substitute actual arguements for parameter in definintion
+	Evalulate sub-procedures
+
+The Shape of the Algorithm
+
+Two ways of peano addition
+
+(define (+ a b)
+ (if (= a 0)
+  b
+  (+ (dec a) (inc b)))) 
+
+Here
+(+ 3 4) |
+(+ 2 5) | time
+(+ 1 6) | 
+(+ 0 7) |
+
+______
+space
+
+time = O(a)
+space = O(1)
+
+Iteration
+_________________________________________________-
+
+(define (+ a b)
+ (if (= a 0)
+  b
+  (inc (+ (dec a) b))))
+
+Here
+
+(+ 3 4)                   |
+(inc (+ (dec 2) 4))       | 
+(inc (inc (+ (dec 1) 4))) |
+(inc (inc (inc (+ 0 4)))) | time
+(inc (inc (inc 4)))       |
+(inc (inc 5))             |
+(inc (6))                 |
+7
+
+______________
+    space 
+   (ignore the constant after)
+
+time = O(a)
+space = O(b)
+
+Linear Recursion
+______________________________________________
+
+
+So what is the difference between iteration and recursion?
+Both the peano arithmetic functions have recursive definitions- each is
+defined in terms of itself
+
+So what is it in the upper process that makes it an iteration?
+
+Two ways to think about this:
+
+a. In recursion, there is bureucracy- you have more people who are waiting for
+a 'chit'. In linear, there is less beurocracy- no chits outstaning- the final
+chit is given back to the original person
+
+b. In iteration, the current state of the function (parameters) is sufficient
+to find the answer. In recursion, there is stuff under the table- stuff with
+the computer-> the (inc (inc (inc which will not be saved. So the function
+call is not sufficient to resume execution
+
+So all those 'recursive' function answers that don't 'feel' clever are not
+recursive after all
+
+An easy way to reduce space in recursion is to create an array of n answers
+and store answers there- then you can look up on the array to find any answer
+you have already written
+
+----------------------------------------------------------------------------------
+
+A recursive procedure is different from a recursive procedure-
+In fact, both the procedures above are recursive- they are defined in terms of
+themselves.
+However, the processess they generate need not be recursive
+
+Another way to look at iteration:
+A finite set of state variables, and a way to get to the next state of the
+variables.
+A way to look at iteration- a chain of defered operators, whose number and
+config determines the next state. The state variables themselves are not
+sufficient to get to the answer

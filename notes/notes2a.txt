@@ -1,0 +1,207 @@
+What diffrentiates LISP from other languages:
+
+--> Recursion:
+If I can directly solve a problem, do it
+Otherwise, solve a smaller problem and do something to the result
+
+There is something wrong with writing the same code again
+
+The only difference between the procedures for adding integers in sequence and
+squares of integers in sequence is having (+ a ..) in one and (+ (SQR a) ...)
+in other.
+
+Any time we have a bunch of things that are identical, we should come up with
+an abstraction to cover them
+
+All arguements to a procedure have the same level of indentation.
+
+An abstraction can represent an 'idea'. We can name that idea, and use it
+again and again
+
+(DEFINE (SIGMA TERM A NEXT B)	
+	(IF (> A B)
+		0
+		(SIGMA TERM
+		       (NEXT A)
+		       NEXT
+                       B)))	
+
+Now, SQUARE-SUM becomes
+
+(DEFINE (SQUARE-SUM A B)
+	(SIGMA SQR A +1 B)) !!
+
+But, INT-SUM requires an IDENTITY procedure! (to pass as arguement for
+parameter TERM)
+(DEFINE (IDENTITY A) A)
+
+Here, I was forced to write a named procedure (IDENTITY A) to pass as
+arguement
+But there is a better way- 
+LAMBDAS:
+Lambdas are anonymous functions, which are used only once (precisely because
+we do not 'remember' them)
+Now, IDENTITY can be replaced by (LAMBDA (i) i)
+The term in the pi-sum (1 / (i * (i + 2))) can be replaced by
+(LAMBDA (i) (/ 1 (* i (+ i 2))))!
+
+(Abhijit Rocks)
+This allows us to change the method of addition (say from recursive to
+iterative) without changing everything. I simply make SIGMA iterative, rather
+than changing all of INT-SUM, SQR-SUM and PI-SUM
+
+Procedures are not special. Procedure names are also variables, whose value is
+a procedure.
+They can be passed as arguements from one procedure to another
+
+(NEXT A) is "applying NEXT to A (evaluating to the next value of A)"
+NEXT is "the procedure NEXT"
+
+(DEFINE AVERAGE-DAMP .. define AVERAGE-DAMP 
+ (LAMBDA (F)         .. as the procedure LAMBDA which takes an arguement F
+	 (LAMBDA (X) (AVERAGE X (F X))))) .. which is a PROCEDURE taking an arguement X and returns the average of F and F(X)
+
+Alternatively this can be done as
+(DEFINE (AVERAGE-DAMP F)
+ (DEFINE (FOO X) defineFOO as a procedure having arguement X
+  (AVERAGE X (F X)))    which returns the average of X and (F X)
+ FOO) and returns the procedure FOO
+
+AVERAGE-DAMP takes a single arguement F
+It is the procedure which it returns which takes a single arguement X!
+
+Higher Order Procedures are procedures that take procedural arguements and
+return procedures as values
+Now these can be used as a means of abstraction
+
+(DEFINE (FIXED-POINT F INITIAL)
+ (DEFINE (ITER OLD NEW)
+  (IF (CLOSE-ENOUGH OLD NEW)
+      NEW
+      (ITER (NEW (F NEW))))) 
+ (ITER INITIAL (F INITIAL)))
+
+Why average-damp?
+Consider this- for square root of X, fixed point of X/Y is also SQRT(X)!
+Why not find fixed point of this, instead of (Y + X/Y) / 2?
+Reapplying F = X/Y keeps the value oscillating about the answer
+Averaging brings value closer to the actual value, reduces the amplitude of
+the oscillation so to speak
+
+Building Newton't Method:
+
+yn+1 = yn - f(yn) / f'(yn)
+yn+1(yn) = yn --> fixed point
+i.e when yn is sufficiently close to yn+1, we have our answer
+
+When I put y s.t y = 0 in this, yn+1 = yn
+Fixed point will give us 0
+
+Now, 
+sqrt(x) is that y s.t y^2 = x
+What we want is a zero of the function
+f(y) = x - y^2
+
+so
+
+(define (sqrt x) sqrt as
+ (newton (lambda(y) (- x (sqr y))) guess)) the the root returned by the
+newton'w method applied to the function x - y^2 starting with initial guess
+'guess'
+
+But I do not have newton yet
+Fear not. Newton is nothing but the procedure which finds the fixed point of
+the function defined as F(y) = y - f(y) / f'(y)
+
+(define (newton f guess)
+ (define df (deriv f))
+ (fixed-point (lambda(y) (- y (/ (f y) (df y)))) guess))
+
+But where is the derivative?
+Derivative is a procedure which takes a procedure which computes a function as
+arguement and returns a procedure which computes it's derivative
+
+(define (deriv f)
+ (lambda(x) (/ (- (f (+ x dx)) (f x)) dx)))
+
+OR
+
+(define deriv .. define derivative
+ (lambda(f) .. as that lambda function of f
+  (lambdd(x) (/ (- (f (+ x dx)) (f x)) dx)))) -- which returns the lambda
+function which computes the derivative of f
+
+(define dx 0.000001)
+
+-> Functions as first class citizens
+
+1. Should be able to have names-> C has this
+2. To be passed as arguements to procedures-> C has this somewhat, using
+function pointers
+3. To be returned as result of procedure -> C does not have this
+4. To be incorporated into data structures -> C has this in the form of
+function pointers
+
+-> From the book:
+
+Lambdas can be defined and CALLED at the same time
+eg.
+We used a lambda to define an incrementor to be passed to sum as 'next'
+However, we can also define and use a lambda thus:
+
+((lambda(x y z) (- (+ x y) z)) 1 3 2)
+and get value 2
+here, The definition of lambda takes the place of the operand
+Here, if we use some 'x' from the outer scope as a parameter to the lambda
+expression, it will be different from the 'x' in the definition of lambda
+
+This can be used to create an equivalent of assignment inside a procedure:
+((lambda(a b c) (expression of a, b c)) <var 1> <var 2> <var 3>)
+This is like assigning vars to a, b, c and then using a, b, c in an expression
+
+'let' is used as syntactic sugar for such use:
+(let ((a <var 1>)
+      (b <var 2>)
+      (c <var 3>))
+      (expression of a, b, c))
+
+So 
+(let ((var1 exp1)
+      (var2 exp2)
+      .
+      .
+      .
+      (varn expn))
+      body)
+
+is equivalent to
+
+((lambda(var1 var2 ... varn)
+        body)
+  exp1
+  exp2
+  .
+  .
+  .
+  expn)
+
+Now, exp1, exp2 are computed outside the scope of the lambda, and thus the
+let, too
+
+-> Abstraction:
+
+Both methods of computing square root, and newton's method are methods which
+find fixed points of the transform of some function.
+The Diophantes method finds the fixed point of the average-damp (transform) of
+y-> x / y (function)
+The Newton's method finds the fixed point of the newton's transform of the
+function y -> y^2 - x
+This can be generalised as s procedure
+
+(define (fixed-point-of-transform f transform guess) define as that procedure
+ (fixed-point (transform f) guess)) which finds fixed point of transform of f,
+with initial guess 'guess'!
+
+This brings much more clarity than a big definition with many internal
+definition. This furthers our goal of holding more information in the mind at
+the same time, ignoring what's below

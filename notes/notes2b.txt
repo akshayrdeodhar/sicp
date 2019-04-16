@@ -1,0 +1,367 @@
+Recap:
+Primitives: What the language provides
+Means of Combination: Ways of combining primitives together
+Means of Abstraction: Naming things, so that they can be used as building
+blocks, without caring how they are implemented underneath
+
+Procedures can be abstractions
+Higher order procedures can be used to specify a way of computation, rather
+than something specific, and can be used to do many things by simply changing
+there arguements
+
+In a complex system, there exist barriers of abstraction. When implementing
+the upper level, we take the lower level for granted, not caring how it is
+implemented, so long as it works the way we want it to. A more complex system
+will have more levels of abstraction.
+
+Data too can be 'glued' together, to abstract away it's individual components
+
+Suppose I want a system that does Rational Arithmetic. 
+All computations done in terms of fractions consiting of a numerator and
+demominator
+Everytime a do a computation with a fraction, I will need to access it's num
+and denominator. However, we want the numerator and the denominator to be
+identified together.
+
+How do we do this? 
+An important method of desiging a program: Wishful Thinking-
+Say- if I had a procedure to build such a fraction, and procedures to get
+denominator and numerator from the fraction, how would my addition and
+multiplication functions be?
+(George implements these procedures, and we only know their 'interface')
+
+So.
+
+(make-rat num den) -> [ num den ] (CONSTRUCTOR)
+
+(numerator [num den]) -> num (SELECTOR)
+
+(denominator [num den]) -> den (SELECTOR)
+ 
+Now, the +RAT and *RAT will be
+
+(define (+RAT a b)
+ (make-rat
+  (+
+    (* (numerator a) (denominator b))
+    (* (denominator a) (numerator b)))
+  (* (denominator a) (numerator b))))
+
+(define (*RAT a b)
+ (make-rat
+  (* (numerator a) (numerator b))
+  (* (denominator a) (denominator b))))
+
+But why do I want this compound data any way?
+Why not keep these variables n1, d1, n2, d2, and use these?
+Suppose I have a complicated expression, with fractions getting added and
+these sums getting multipliled by other fractions. In this case, I will need a
+lot of temperory variables. (in case of a register machine)
+
+This makes code confusing and less clear
+The whole Idea is that a program in a good programming language should be able
+to express Ideas.
+It makes more sense to do
+(*RAT (+RAT a b) (+RAT c d))
+nt1 = (+ (* na db) (* nb da))
+dt1 = (* da db)
+
+then doing 
+n = (* nt1 nt2)
+d = (* dt1 dt2)
+
+
+Note:
+But the thing is, in a functional language, what will happen is, no variables.
+So
+(*RAT (+RAT a b) (+RAT c d))
+will actually be
+(*RAT (+RAT (MAKE-RAT na da) (MAKE-RAT nb db)) (+RAT (MAKE-RAT nc dc) (MAKE-RAT nd dd)))
+
+I want to carry them together all the time. I want to say things like "add two
+natural numbers"
+
+
+->How exactly do we make the constructor and selector?
+
+The glue that makes data abstraction possible is list structure.
+
+What is actually being used is pairs
+
+List provides 3 primitive functions CONS, CAR and CDR
+Now, 
+
+(CONS X Y) creates a pair (X, Y)
+(CAR PAIR) gives the first part of the pair
+(CDR PAIR) gives the second part of PAIR
+
+Basically,
+(CAR (CONS X Y)) -> X
+(CDR (CONS X Y)) -> Y
+
+This is represented using link and box pairs
+   
+_____
+     |
+ ___ |___
+|   |   |
+|_|_|_|_| 
+  |   |
+  |   |____ X
+  Y
+
+Now, MAKE-RAT, NUMERATOR, DENOMINATOR can be easily implemented.
+
+(DEFINE (MAKE-RAT X Y)
+ (CONS X Y))
+
+(DEFINE (NUMERATOR R)
+ (CAR R))
+
+(DEFINE (DENOMINATOR R)
+ (CDR R))
+
+Now the system can be used as follows
+Suppose I want to do 1/2 + 2/4
+
+(DEFINE A (MAKE-RAT 1 2))
+(DEFINE B (MAKE-RAT 2 4))
+(DEFINE (ANS (+RAT A B)))
+(NUMERATOR ANS)
+(DENOMINATOR ANS)
+
+Q. Where does the value the 'thing' get bound to A and B?
+   When does CONS happen? At definition or at NUMERATOR ANS?
+
+Anyway. The problem here is this:
+(NUMERATOR ANS) -> 6
+(DENOMINATOR ANS) -> 8
+This is because our system does not reduce fractions.
+
+This can be remedied by modifying MAKE-RAT
+
+(DEFINE (MAKE-RAT A B)
+ (LET ((G (GCD A B)))
+  (CONS (/ A G) (/ B G))))
+
+Now every fraction constructed will be a reduced fraction.
+
+What is our system now?
+
+--------------------------------------------------------
+Operations
+ +RAT	*RAT	-RAT
+--------------------------------------------------------
+Constructor and Selector				<----- Abstraction Layer
+ MAKE-RAT	NUMERATOR	DENOMINATOR		       "Data Abstraction"
+--------------------------------------------------------
+Pairs
+ CONS	CAR	CDR
+-------------------------------------------------------
+
+We are seperating the use of data objects from the representation of data
+objects.
+Data Abstraction is the programming methodology of setting up data objects by
+postulating constructors and selectors and seperating the use from
+representation.
+
+The natural question is "Why do this?"
+We can use CONS, CAR and CDR instead of MAKE-RAT, NUMERATOR, and DENOMINATOR,
+and the operations will still work!
+
+In CONS CAR and CDR, there will never be a representation of natural numbers
+as a conceptual entity?
+But what is the advantage of having rational data objects as conceptual
+entities?
+
+One use:
+We can change the implementation!
+For example, we can reduce the rational in NUMERATOR and DENOMINATOR instead
+of MAKE-RAT! (And that is beautiful.)
+Just keep the basic MAKE-RAT, and do
+(DEFINE (NUMARATOR R)
+ (/ (CAR R) (GCD (CAR R) (CDR R))))
+
+And similarly for denominator.
+
+Now, so long as I keep the names same, I do not need to worry about the
+remaining code so long as the implementation is one of the two (i.e reduces to
+lowest terms)
+
+If more constructions, then do GCD while selecting
+If more selections, then do GCD while constructing
+But I don't know in advance what is going to happen in the system later.
+When I design a system using wishful thinking, giving the names and making the
+abstraction allows me to proceed.
+
+Allows system designers to make design without facing the consequences of
+their decisions. Not being 'bound' to do *that* thing.
+
+I still don't understand this clearly. Maybe it's becuase I havent build
+complex computer systems Abelson talks about. Or have I? While writing chess,
+if I had wanted to write the code ground up, I would never have finished it.
+What I did was, I imagined a board object which would allow me to consider
+minmax as my algorithm.
+I imagined a can_move() and a can_attack() which allowed me to flowchart
+generate() and is_checkmate() in their terms.
+Abstraction allows you to get along with the design by only giving names.
+
+Programming is like Sorcery. Names have power. When you give an abstraction a
+name, you have power over it.
+
+"It's a good thing that programming is like magic. Becauase sometimes it's
+also like religion"
+-Hal Abelson, Bashing "REAL PROGRAMMERS"
+
+
+-> Layered systems
+
+The real clever thing about data abstractions, is that you can use one
+abstraction as a component in a higher abstraction.
+For example, I can make a data abstraction of a vector as follows
+
+(define (make-vector x y) (cons x y))
+
+(define (x-coord v) (car v))
+
+(define (y-coord v) (cdr v))
+
+Now, I can use these to represent a line segment in a plane-
+A segment can be represented by it's endpoints.
+
+(define (make-seg p q) (cons p q))
+
+(define (start-seg s) (car s))
+
+(define (end-seg s) (cdr s))
+
+Now, I can have a procedure which implements the midpoint of a segment-
+
+(define (midpoint s) 
+ (make-vector
+  (average (x-coord (start-seg s)) (x-coord (end-seg s)))
+  (average (y-coord (start-seg s)) (y-coord (end-seg s)))))
+
+Here I don't need to remember the implementation details of the segments.
+I dont' need to think- well is my x coordinate the (car point) or the (cdr
+point)
+
+Names might have sounded silly when my abstraction was single layered.
+But now, I surely don't want to be doing the permutations
+(car (car p)), (car (cdr p)) and so on
+
+Here is a method that goes from layer two to layer 0
+
+(define (length s)
+ (let ((dx 
+        (- (x-coord (start-seg s))
+           (x-coord (end-seg s))))
+       (dy
+        (- (y-coord (start-seg s))
+           (y-coord (end-seg s)))))
+  (sqrt (+
+         (square dx)
+         (square dy)))))
+
+Now don't even get me started on writing the code for square and square root.
+Them moment I gave a name to square, and to square root, I did get power over
+them.
+
+It is not so that naming allows ME to change MY IMPLEMENTATION. It actually is
+so that when someone from another layer wants me to change the implementation
+of my layer, HE can do it without changing his code.
+
+When the sequence of x and y changes in vector, It would be easy to rewrite
+midpoint, which is on the same layer- but rewriting length would cause bigger
+problems.
+
+We also cannot have a layer-less architecture of the system, because then we
+would have to remember everything. Controlling Complexity would be out of the
+window.
+
+And real world systems have layers and layers. Would you be comfortable
+remembering the CARs and CDRs at such a depth?
+
+-> Closure
+
+The reason pairs are so powerful is that they are closed.
+I can't just make a pair of numbers, I can make a pair of pairs. Thus cons is
+a closed operation.
+
+
+Take a look at the structure of segment.
+ V  _______
+	___|___
+       |   |   |
+       |_|_|_|_|                V is a pair of pairs.
+    P    |   |                  P and Q are pairs of numbers.  
+     ____|   |____  Q               
+     |            |        
+  ___|___      ___|___    
+ |   |   |    |   |   |            
+ |_|_|_|_|    |_|_|_|_|           
+   |   |        |   |     
+   x   y        x   y     
+
+Because of closure, I can combine as many objects as I want-
+
+ __ __       __ __
+|  | _|_____|  |  |
+|__|__|     |__|__| And that makes a 3-D vector
+ x           y  z
+
+Now I could write a procedure which takes 'n' and returns the (make-rat )
+procedure for an n-d vector..
+Or could I? When writing a lambda, can I dynamically specify the number of
+arguements to it?
+
+
+What is a data abstraction, really?
+It is an axiom.
+For example, the data abstraction of rational numbers is 3 procedures
+make-rat, numer and denom that satisfy
+
+(number (make-rat a b)) -> a
+(denom (make-rat a b)) -> b
+
+Any implementation that satisfies this axiom is a data abstraction for
+rational numbers.
+Naming is powerful because it defines these axioms. We have the axioms of our
+system, now we can implement it anyway we want.
+
+-> A startling discovery:
+
+What are cons, car and cdr, really?
+
+They too, are nothing more than an axiom:
+
+(car (cons a b)) -> a
+(cdr (cons (a b)) -> b
+
+So this:
+
+(define (cons a b)
+ (lambda(pick)
+  (if (= pick 0)
+      a
+      b)))
+
+(define (car x)
+ (x 0))
+
+(define (cdr x)
+ (x 1))
+
+Is a valid implemetation of cons, car cdr.
+
+There is no 'data' here as such. Just procedures.
+It is lambdas all the way down.
+
+Also:
+Procedures are not the act of doing something, but objects:
+so
+(define a (cons 23 45))
+(define b (cons 34 1))
+a and b are both different- they are two different procedures, though they
+take the same argument pick, as they return something else.
+

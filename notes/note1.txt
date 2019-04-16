@@ -1,0 +1,36 @@
+Substitution model of evaluation
+
+Consider the following statements in scheme
+
+(define (square x) (* x x))
+
+(define (sumofsquares x y) (+ (square x) (square y))
+
+SICP says:
+To evaluate an expression:
+1. Evaluate all subexpressions
+2. Apply 
+
+(that's half-done)
+
+Now, to evaluate an expression of a *procedure*
+
+Replace the function call with the definition, replacing formal parameters by
+actual parameters
+
+eg.
+
+(sumofsquares 3 4)
+(+ (square 3) (square 4)) # substituted sumofsquares by it's definition
+(+ (* 3 3) (* 4 4)) # substituted 'square' by it's definition
+(+ 9 16) # evaluate subexpressions
+25
+Done
+
+SICP also says:
+The substituton model of evaluation *BREAKS DOWN* when we use spells on stuff
+called mutable data
+
+
+Also: 
+INTERPRETER DOES *NOT* USE THE SAME WAY OF EVALUATION
