@@ -1,0 +1,345 @@
+Recap:
+Data abstraction: 
+The idea that you can seperate representation of data objects from their
+usage. As long as the interface is clearly defined, you do not care what goes
+on inside.
+Lisp allows 'gluing' data objects together using cons, car, and cdr. We know
+what cons, car and cdr do (the rules they follow), and need not care about how
+they are implemented.
+
+? It could be done with primitives? What are primitives?
+
+Just like 
+(define (make-vector x y)
+ (cons x y))
+
+"make-vector" is the procedure that takes two arguments x and y and returns
+the cons of x and y
+
+Is a way to make a 2-d vector, I can also do
+
+(define make-vector cons)
+
+"make-vector" *is* the procedure cons
+
+* Closure:
+Things that have been made by combining things using cons can themselves be
+combined using cons. This allows us to make as much complexity as we want, and
+not remain stuck in pairs. (otherwise cons would be useless as a means of
+abstraction)
+
+"The set of data objects in lisp is closed under the operation of forming
+pairs"
+
+(and (lisp-object a) (lisp-object b)) -> (lisp-object (cons a b))
+
+* When seeing a means of combination- are things closed under means of
+  combination?
+
+
+* Representing more than two elements with pairs
+
+There are several ways of representing 4 elements using pairs
+        
+ V  _______
+	___|___
+       |   |   |
+       |_|_|_|_|            
+         |   |                  
+     ____|   |____                 
+     |            |        Like this
+  ___|___      ___|___    
+ |   |   |    |   |   |            
+ |_|_|_|_|    |_|_|_|_|           
+   |   |        |   |     
+   a   b        c   d     
+
+
+
+	___|___
+       |   |   |
+       |_|_|_|_|
+         |   |
+     ----    d
+  _ _|___
+ |   |   |		   Or this
+ |_|_|_|_|
+   |   |
+   a   |
+       |
+    ___|___
+   |   |   |
+   |_|_|_|_|
+     |   |
+     b   c
+
+It would be a bad idea to use an arbitrary representation when we want to
+group elements together. 
+
+The conventional way used in list is a "List"
+
+A list of a, b, c, d would be this:
+
+   list
+    |
+ ---|---         --- ---
+|   |  _|___ ...|   | / |  (the / is a special value that signifies 
+|_|_|___|       |_|_|/__|   the end of the list)
+  |               |
+  a               d
+
+"A bunch of pairs, such that the successive cars of each pair are the items
+you want to glue together, and the cdr is a pointer which points to the next
+pair"
+
+The way to build this in lisp is:
+
+(cons a
+      (cons b
+            (cons c
+                  (cons d nil))))
+
+nil is a name for the end of list 
+
+Writing so many conses everytime is a bad idea.
+Lisp thus has an operation (list ..) that is syntactic sugar for this chain of
+conses.
+
+A common thing to do in list is apply some procedure to each element of a
+list. What is done is "Recursively do something to the cdr of the list, and
+cons that onto doing something to the first element of the list that is the
+car of the list." When 
+
+For example, here is a procedure that scales each element of the list by 10
+
+(define (scale s l)
+ (if (null? l)
+     nil
+     (cons (* s (car l))
+           (scale s (cdr l)))))
+
+This is called 'cdring down a list'
+Because cdring down the list is something general, you should write a higher
+order procedure that takes a procedure as argument and applies that to each
+element of the list and returns the result
+
+The general procedure that cdrs down a list is called map, and returns the
+list of the result of applying the a procedure (which is it's argument) to
+each element of the list.
+
+(define (map p l)
+ (if (null? l)
+     nil
+     (cons (p (car l))
+           (map p (cdr l)))))
+
+Now, scale could be written as
+
+(define (scale s l)
+ (map (lambda(x) (* s x)) l))
+
+Now map can be used for anything.
+The above implementation of map is recursive.
+How will an iterative definition look?
+
+map is recursive because cons needs to wait for map to be applied to cdr
+before it can be carried out.
+
+Another thing to do might be "do something" for each element in the list.
+This does not mean build another list. Just carry out some procedure on each
+element in the list as an argument (eg display, draw, print, etc)
+
+(define (foreach proc list)
+ (cond 
+  ((null? list) "done")
+  (else (proc (car list))
+        (foreach proc (cdr list)))))
+
+* Peter Henderson's language to draw Eschler-like pictures
+
+When you talk about a programming language, you talk about 3 things.
+The primitives.
+The means of combination.
+The means of abstraction.
+
+In henderson's language there is only one primitive, that is the picture.
+A picture is *something* that draws a figure that fits a rectangle whose
+dimentions you specify.
+
+The means of combination are rotate, flip, beside and above
+
+Rotate rotates a picture by some angle and returns the same picture
+Flip returns the flipped picture
+Beside takes and argument s in range 0 to one. It then divides base of the
+given rectangle in s:(1 - s), places the first picture to the left and the
+second to the right
+Above does the same thing as beside, except along the vertical direction
+
+As pictures are closed under the operations rotate, flip, etc, pictures can
+get complex real quick.
+
+
+* Implementation:
+
+Basic element: Rectangle
+Consists of origin, horizontal and vertical.
+It's abstraction is:
+
+constructor: make-rect
+selectors: horiz
+           vert
+           origin 
+Implementation of this does not matter
+
+A rectangle defines a transformation from every point in the unit square to a
+point on the rectangle
+
+The transformation is basically the vector addition of (horiz rect) times the
+x co ordinate of the point and (vert rect) times the y co ordinate of the
+point plus the origin of the rectangle.
+
+Co ordinate map is a procedure that takes a rectangle and returns a procedure
+that is the transformation which that rectangle defines.
+
+(define (coord-map rect)
+ (lambda (point)
+  (+vect
+   (+vect (scale (xcor point)
+                 (horiz rect))
+          (scale (ycor point)
+                 (vert rect)))
+   (origin rect))))
+
+Now, a picture is a procedure that draws line segments **mapped on the unit
+square** onto the specified rectangle.
+
+(define (make-picture seglist)
+ (lambda (rect)
+  (foreach 
+   (lambda (x)
+    (drawline ((coord-map rect) (seg-start x))
+              ((coord-map rect) (seg-end x))))
+   seglist)))
+
+A procedure that takes a list of segments as an argument, and returns a
+procedure taking a rectangle as an argument, which for each segment
+in the list, draws a line from the transformation of the starting from the
+starting point of the segment transformed to the rectangle to the ending point
+of the list transformed to the rectangle.
+
+"drawline" is a primitive available.
+
+Now, to draw a picture, what should be done is this:
+
+(define pic (make-picture ..)) - pass a list of line segments
+
+(define r (make-rect .. )) - pass the origin, horizontal axis, vertical axis
+
+and
+
+(pic r)
+
+will draw the picture on the rectangle r
+
+* Elegant Means of combination
+
+The reason Harold likes this implementation of pictures is this:
+
+Consider the procedure beside
+
+(define (beside p1 p2 s)
+ (lambda (rect)
+  (p1 (make-rect (origin rect)
+                 (scale s (horizon rect))
+                 (vert rect)))
+  (p2 (make-rect (+vect (origin rect) (scale s (horizon rect)))
+                 (scale (- 1 s) (horizon rect))
+                 (vert rect)))))
+
+Now, because p1 and p2 are *procedures that draw on rectangles* all besides
+has to do is compute the rectangles on which the drawing has to be done, then
+ten p1 and p2 to draw themselves.
+the rectanlge is "divided", p1 is passed the first part and p2 the second
+part.
+This is beautiful.
+Had p1 and p2 been data (in the way that numbers are data, not lambdas), the
+implementation of besides would not have been that simple!
+
+Similarly, the implementation of rotate will be:
+
+v
+ --
+|  |
+|  |
+|__| h
+O
+
+to
+
+ -- h
+|  |
+|  |
+|__|
+v  O
+
+
+(define (rotate90 p)
+ (lambda (rect)
+  (p (make-rect (+vec (origin rect) (horizon rect))
+                (vert rect)
+                (scale (- 1) (horizon rect))))))
+
+Because the primitives and the means of combination themselves are lisp
+procedures, the ways of manipulating procedures which lisp provides are also
+available to this language.
+
+The picture language is implemented and "embedded" in lisp.
+
+(define (right-push p n a)
+ (lambda(rect)--
+
+That's wrong. That's precisely the point harold is trying to make. Now besides
+is our abstraction!
+
+(define (right-push p n a)
+ (if (= n 0)
+     p
+     (besides p
+              (right-push p (- n 1) a)
+              a)))
+
+The abstraction does not need to stop here! We could generalise "pushing" as a
+higher order procedure
+
+(define (push proc)
+ (lambda (pict n a)
+  ((repeated (lambda (p) (proc pict p a)) n) pict)))
+
+push is that procedure
+which takes a procedure as an argument (of form (proc p1 p2 s))
+and returns the procedure that takes a picture, a number n and a scaling
+factor a as arguments
+And returns the result of repeatedly applying the procedure proc to the
+original picture with scaling factor a n times
+
+(push besides)
+
+(lambda (pict n a)
+ ((repeated (lambda(p) (besides pict p a)) n) pict))
+
+(besides pict (besides pict pict a) a)
+
+right push with n = 2 will also give
+
+(besides pict (right-push pict 1 a) a)
+(besides pict (besides pict (right-push pict 0 a) a) a)
+(besides pict (besides pict pict a) a)
+
+Which is the same thing as running (push besides) with n = 2
+
+
+Software engineering breaks down a problem into subproblems, then further
+breaks these subproblmems into smaller ones (each one specified exactly)
+This results in a tree-like structure, here at each node you define an
+
+
