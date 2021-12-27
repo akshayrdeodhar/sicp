@@ -5,5 +5,4 @@ book/*
 imsmanifest.xml
 lectures/*
 *~
-
-
+*.mp4

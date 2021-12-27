@@ -7,3 +7,6 @@
   (if (pair? l)
       (iter l nil)
       l))
+
+(define x (list (list 1 2) (list 3 4) 5 6))
+(deep-reverse x)
