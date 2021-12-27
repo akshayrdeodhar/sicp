@@ -92,7 +92,7 @@ you have already written
 
 ----------------------------------------------------------------------------------
 
-A recursive procedure is different from a recursive procedure-
+A recursive process is different from a recursive procedure-
 In fact, both the procedures above are recursive- they are defined in terms of
 themselves.
 However, the processess they generate need not be recursive
@@ -100,6 +100,6 @@ However, the processess they generate need not be recursive
 Another way to look at iteration:
 A finite set of state variables, and a way to get to the next state of the
 variables.
-A way to look at iteration- a chain of defered operators, whose number and
+A way to look at recursion- a chain of defered operators, whose number and
 config determines the next state. The state variables themselves are not
 sufficient to get to the answer

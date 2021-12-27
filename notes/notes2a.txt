@@ -59,7 +59,7 @@ NEXT is "the procedure NEXT"
 
 (DEFINE AVERAGE-DAMP .. define AVERAGE-DAMP 
  (LAMBDA (F)         .. as the procedure LAMBDA which takes an arguement F
-	 (LAMBDA (X) (AVERAGE X (F X))))) .. which is a PROCEDURE taking an arguement X and returns the average of F and F(X)
+	 (LAMBDA (X) (AVERAGE X (F X))))) .. which is a PROCEDURE taking an arguement X and returns the average of X and F(X)
 
 Alternatively this can be done as
 (DEFINE (AVERAGE-DAMP F)
