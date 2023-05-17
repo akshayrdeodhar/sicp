@@ -6,6 +6,11 @@
       (op (car sequence)
           (accumulate op initial (cdr sequence)))))
 
+; as you keep cdr-ing down each list,
+; when you reach the end, accumulate-n
+; will take a list of nils as an argument
+; now, the car of the sequence will be nil!
+; in no other case will the car of the sequence be nil!
 (define (accumulate-n op init seqs)
   (if (null? (car seqs))
       nil
